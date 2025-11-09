@@ -102,3 +102,37 @@ h2 {
     zoom: 0.8;
     margin: 0 auto; /* 居中顯示 */
 }
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+    .stat-row {
+        flex-direction: column; /* 在較小螢幕上垂直堆疊 */
+    }
+
+    .card {
+        flex: 1 1 auto; /* 允許卡片縮放 */
+        height: auto; /* 高度自動調整 */
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px; /* 減少手機上的邊距 */
+    }
+    
+    .main-wrapper {
+        zoom: 1; /* 在手機上恢復正常大小 */
+    }
+
+    h1 {
+        font-size: 1.5rem; /* 縮小主標題字體 */
+    }
+
+    .card, .timeseries-card {
+        padding: 15px;
+    }
+
+    .timeseries-card {
+        height: 250px; /* 稍微降低時序圖高度 */
+    }
+}

@@ -1,9 +1,9 @@
 {
-  "name": "gpu-util",
+  "name": "web-gpu",
   "version": "1.0.0",
   "description": "",
   "license": "ISC",
-  "author": "",
+  "author": "Wayne Chang",
   "type": "commonjs",
   "main": "index.js",
   "scripts": {

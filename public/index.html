@@ -21,7 +21,6 @@
                     <div class="percentage" id="cpuPercent">... %</div>
                 </div>
                 <div class="info">
-                    <p><strong>型號:</strong> <span id="cpuModel">讀取中...</span></p>
                     <p><strong>核心數:</strong> <span id="cpuCores">...</span></p>
                 </div>
             </div>
@@ -130,10 +129,18 @@
                             type: 'time',
                             display: true,
                             time: {
-                                unit: 'minute',
-                                displayFormats: { minute: 'HH:mm' }
+                                unit: 'second',
+                                stepSize: 10,
+                                tooltipFormat: 'HH:mm:ss',
+                                displayFormats: {
+                                    second: 'HH:mm:ss'
+                                }
                             },
-                            ticks: { color: '#c0caf5' }
+                            ticks: { 
+                                color: '#c0caf5',
+                                maxRotation: 0,
+                                minRotation: 0
+                            }
                         },
                         y: {
                             beginAtZero: true,
@@ -203,7 +210,6 @@
                 const formattedCpuLoad = cpuLoadValue.toFixed(1) + ' %';
                 updateDoughnutChart(cpuChart, cpuLoadValue, formattedCpuLoad);
                 updateTimeSeriesChart(cpuTimeSeriesChart, cpuLoadValue);
-                document.getElementById('cpuModel').innerText = data.cpu.brand;
                 document.getElementById('cpuCores').innerText = data.cpu.cores;
 
                 // --- 更新 RAM ---
