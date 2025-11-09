@@ -23,7 +23,7 @@ WORKDIR /app
 # 複製後端依賴性定義檔
 COPY package*.json ./
 
-# 安裝生產環境的依賴
+# 安裝生產環境的依賴. 
 RUN npm install --production
 
 # 複製後端應用程式碼
