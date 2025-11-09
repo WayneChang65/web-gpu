@@ -114,6 +114,6 @@ app.get('/api/stats', async (req, res) => {
 
 // 啟動伺服器 (保持不變)
 app.listen(port, '0.0.0.0', () => {
-  console.log(`伺服器正在啟動，請在同網域的電腦上存取 http://<YOUR_IP>:${port}`);
-  console.log(`儀表板現在位於: http://localhost:${port}`);
+  console.log(`伺服器正在啟動，請在同網域的電腦上存取 http://<YOUR_IP>:8080`);
+  console.log(`儀表板現在位於: http://localhost:8080`);
 });
