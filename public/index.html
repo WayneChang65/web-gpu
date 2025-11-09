@@ -38,7 +38,7 @@
                     <div class="percentage" id="gpuPercent">... %</div>
                 </div>
                 <div class="info">
-                    <p><strong>型號:</strong> <span id="gpuModel">讀取中...</span></p>
+                    <!-- GPU 型號顯示已移除 -->
                 </div>
             </div>
             <div class="timeseries-card">
@@ -200,9 +200,13 @@
                 if (!response.ok) throw new Error('API 請求失敗');
                 const data = await response.json();
 
-                // 更新主機名稱
-                if (data.hostname) {
-                    document.getElementById('hostnameDisplay').innerText = data.hostname + ' - ';
+                // 更新主機名稱 (優先使用 GPU 型號)
+                let displayName = data.hostname; // 預設為主機名稱
+                if (data.gpu && data.gpu.length > 0 && data.gpu[0].model) {
+                    displayName = data.gpu[0].model; // 如果有 GPU 型號，則使用它
+                }
+                if (displayName) {
+                    document.getElementById('hostnameDisplay').innerText = displayName + ' - ';
                 }
 
                 // --- 更新 CPU ---
@@ -227,7 +231,7 @@
                     const formattedGpuUtil = gpuUtilValue.toFixed(1) + ' %';
                     updateDoughnutChart(gpuChart, gpuUtilValue, formattedGpuUtil);
                     updateTimeSeriesChart(gpuTimeSeriesChart, gpuUtilValue);
-                    document.getElementById('gpuModel').innerText = gpuData.model;
+                    // 型號顯示的 JS 已移除
                 }
 
             } catch (error) {
