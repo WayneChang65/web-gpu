@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  app:
+    # 指示 Docker Compose 使用當前目錄的 Dockerfile 進行建置
+    build: .
+    
+    # 設定容器的名稱
+    container_name: my-web-gpu-app
+    
+    # 設定 port 對應，格式為 "主機port:容器port"
+    ports:
+      - "8080:80"
+      
+    # --- GPU 存取設定 ---
+    # 這是 Docker Compose 中啟用 GPU 支援的標準方式
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
