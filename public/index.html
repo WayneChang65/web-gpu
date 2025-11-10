@@ -68,11 +68,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-        const MAX_DATA_POINTS = 2500; // 時序圖顯示的最大數據點數量
+        const MAX_DATA_POINTS = 3600; // 時序圖顯示的最大數據點數量
 
-        // ---------------------------------
-        // 1. 獲取所有 Canvas 上下文
-        // ---------------------------------
+        // 1. 獲取 Canvas 上下文
         const cpuCtx = document.getElementById('cpuChart').getContext('2d');
         const ramCtx = document.getElementById('ramChart').getContext('2d');
         const gpuCtx = document.getElementById('gpuChart').getContext('2d');
@@ -80,10 +78,7 @@
         const ramTsCtx = document.getElementById('ramTimeSeriesChart').getContext('2d');
         const gpuTsCtx = document.getElementById('gpuTimeSeriesChart').getContext('2d');
 
-        // ---------------------------------
         // 2. 建立圖表的輔助函數
-        // ---------------------------------
-        // 建立環圈圖
         function createUsageChart(ctx) {
             return new Chart(ctx, {
                 type: 'doughnut',
@@ -105,14 +100,13 @@
             });
         }
 
-        // 建立時序圖 (折線圖)
         function createTimeSeriesChart(ctx, label, color) {
             return new Chart(ctx, {
                 type: 'line',
                 data: {
                     datasets: [{
                         label: label,
-                        data: [], // 格式: {x: timestamp, y: value}
+                        data: [], // {x: timestamp, y: value}
                         borderColor: color,
                         backgroundColor: color.replace('1)', '0.2)'),
                         borderWidth: 2,
@@ -129,38 +123,29 @@
                             type: 'time',
                             display: true,
                             time: {
-                                unit: 'second',
+                                unit: 'minute',
                                 stepSize: 10,
                                 tooltipFormat: 'HH:mm:ss',
                                 displayFormats: {
-                                    second: 'HH:mm:ss'
+                                    minute: 'HH:mm'
                                 }
                             },
-                            ticks: { 
-                                color: '#c0caf5',
-                                maxRotation: 0,
-                                minRotation: 0
-                            }
+                            ticks: { color: '#c0caf5', maxRotation: 0, minRotation: 0 }
                         },
                         y: {
                             beginAtZero: true,
+                            max: 100,
                             ticks: { color: '#c0caf5' }
                         }
                     },
                     plugins: {
-                        legend: {
-                            display: true,
-                            position: 'top',
-                            labels: { color: '#c0caf5', font: { size: 14 } }
-                        }
+                        legend: { display: true, position: 'top', labels: { color: '#c0caf5', font: { size: 14 } } }
                     }
                 }
             });
         }
 
-        // ---------------------------------
         // 3. 初始化所有圖表
-        // ---------------------------------
         const cpuChart = createUsageChart(cpuCtx);
         const ramChart = createUsageChart(ramCtx);
         const gpuChart = createUsageChart(gpuCtx);
@@ -168,10 +153,7 @@
         const ramTimeSeriesChart = createTimeSeriesChart(ramTsCtx, 'RAM 使用率 (%)', 'rgba(77, 182, 172, 1)');
         const gpuTimeSeriesChart = createTimeSeriesChart(gpuTsCtx, 'GPU 使用率 (%)', 'rgba(126, 87, 194, 1)');
 
-        // ---------------------------------
         // 4. 更新圖表的函數
-        // ---------------------------------
-        // 更新環圈圖
         function updateDoughnutChart(chart, percentValue, percentText) {
             chart.data.datasets[0].data[0] = percentValue;
             chart.data.datasets[0].data[1] = 100 - percentValue;
@@ -180,71 +162,103 @@
             document.getElementById(percentElementId).innerText = percentText;
         }
 
-        // 更新時序圖
-        function updateTimeSeriesChart(chart, value) {
-            const now = Date.now();
-            chart.data.datasets[0].data.push({ x: now, y: value });
-
+        function updateTimeSeriesChart(chart, point) {
+            chart.data.datasets[0].data.push(point);
             if (chart.data.datasets[0].data.length > MAX_DATA_POINTS) {
                 chart.data.datasets[0].data.shift();
             }
             chart.update('none');
         }
+        
+        function processData(data) {
+            // 更新主機名稱
+            let displayName = data.hostname;
+            if (data.gpu && data.gpu.length > 0 && data.gpu[0].model) {
+                displayName = data.gpu[0].model;
+            }
+            if (displayName) {
+                document.getElementById('hostnameDisplay').innerText = displayName + ' - ';
+            }
 
-        // ---------------------------------
-        // 5. 獲取 API 數據並更新頁面的主函數
-        // ---------------------------------
-        async function fetchData() {
-            try {
-                const response = await fetch('/api/stats');
-                if (!response.ok) throw new Error('API 請求失敗');
-                const data = await response.json();
+            // 更新 CPU
+            const cpuLoadValue = parseFloat(data.cpu.load) || 0;
+            updateDoughnutChart(cpuChart, cpuLoadValue, cpuLoadValue.toFixed(1) + ' %');
+            updateTimeSeriesChart(cpuTimeSeriesChart, { x: data.timestamp, y: cpuLoadValue });
+            document.getElementById('cpuCores').innerText = data.cpu.cores;
 
-                // 更新主機名稱 (優先使用 GPU 型號)
-                let displayName = data.hostname; // 預設為主機名稱
-                if (data.gpu && data.gpu.length > 0 && data.gpu[0].model) {
-                    displayName = data.gpu[0].model; // 如果有 GPU 型號，則使用它
-                }
-                if (displayName) {
-                    document.getElementById('hostnameDisplay').innerText = displayName + ' - ';
-                }
+            // 更新 RAM
+            const ramUsageValue = parseFloat(data.ram.usage) || 0;
+            updateDoughnutChart(ramChart, ramUsageValue, ramUsageValue.toFixed(1) + ' %');
+            updateTimeSeriesChart(ramTimeSeriesChart, { x: data.timestamp, y: ramUsageValue });
+            document.getElementById('ramUsed').innerText = data.ram.used;
+            document.getElementById('ramTotal').innerText = data.ram.total;
 
-                // --- 更新 CPU ---
-                const cpuLoadValue = parseFloat(data.cpu.load) || 0;
-                const formattedCpuLoad = cpuLoadValue.toFixed(1) + ' %';
-                updateDoughnutChart(cpuChart, cpuLoadValue, formattedCpuLoad);
-                updateTimeSeriesChart(cpuTimeSeriesChart, cpuLoadValue);
-                document.getElementById('cpuCores').innerText = data.cpu.cores;
-
-                // --- 更新 RAM ---
-                const ramUsageValue = parseFloat(data.ram.usage) || 0;
-                const formattedRamUsage = ramUsageValue.toFixed(1) + ' %';
-                updateDoughnutChart(ramChart, ramUsageValue, formattedRamUsage);
-                updateTimeSeriesChart(ramTimeSeriesChart, ramUsageValue);
-                document.getElementById('ramUsed').innerText = data.ram.used;
-                document.getElementById('ramTotal').innerText = data.ram.total;
-
-                // --- 更新 GPU ---
-                if (data.gpu && data.gpu.length > 0) {
-                    const gpuData = data.gpu[0];
-                    const gpuUtilValue = parseFloat(gpuData.utilization) || 0;
-                    const formattedGpuUtil = gpuUtilValue.toFixed(1) + ' %';
-                    updateDoughnutChart(gpuChart, gpuUtilValue, formattedGpuUtil);
-                    updateTimeSeriesChart(gpuTimeSeriesChart, gpuUtilValue);
-                    // 型號顯示的 JS 已移除
-                }
-
-            } catch (error) {
-                console.error('更新數據時出錯:', error);
+            // 更新 GPU
+            if (data.gpu && data.gpu.length > 0) {
+                const gpuData = data.gpu[0];
+                const gpuUtilValue = parseFloat(gpuData.utilization) || 0;
+                updateDoughnutChart(gpuChart, gpuUtilValue, gpuUtilValue.toFixed(1) + ' %');
+                updateTimeSeriesChart(gpuTimeSeriesChart, { x: data.timestamp, y: gpuUtilValue });
             }
         }
 
-        // ---------------------------------
-        // 6. 啟動！
-        // ---------------------------------
-        document.addEventListener('DOMContentLoaded', fetchData);
-        setInterval(fetchData, 1000); // 更新頻率設為 1000 毫秒
+        // 5. WebSocket 連線
+        function connectWebSocket() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${window.location.host}`;
+            const ws = new WebSocket(wsUrl);
 
+            ws.onopen = () => {
+                console.log('WebSocket 已連線');
+            };
+
+            ws.onmessage = event => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'history') {
+                    // 清空現有數據
+                    cpuTimeSeriesChart.data.datasets[0].data = [];
+                    ramTimeSeriesChart.data.datasets[0].data = [];
+                    gpuTimeSeriesChart.data.datasets[0].data = [];
+                    
+                    // 載入歷史數據
+                    message.data.forEach(dataPoint => {
+                        cpuTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.cpu.load) });
+                        ramTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.ram.usage) });
+                        if (dataPoint.gpu && dataPoint.gpu.length > 0) {
+                           gpuTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.gpu[0].utilization) });
+                        }
+                    });
+                    
+                    // 更新最後一筆數據到環圈圖和資訊欄
+                    if (message.data.length > 0) {
+                        processData(message.data[message.data.length - 1]);
+                    }
+                    
+                    // 一次性更新所有時序圖
+                    cpuTimeSeriesChart.update('none');
+                    ramTimeSeriesChart.update('none');
+                    gpuTimeSeriesChart.update('none');
+
+                } else if (message.type === 'update') {
+                    processData(message);
+                } else if (message.type === 'error') {
+                    console.error('伺服器錯誤:', message.message);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('WebSocket 已離線，嘗試重新連線...');
+                setTimeout(connectWebSocket, 3000); // 3秒後重連
+            };
+
+            ws.onerror = error => {
+                console.error('WebSocket 錯誤:', error);
+                ws.close();
+            };
+        }
+
+        // 6. 啟動
+        document.addEventListener('DOMContentLoaded', connectWebSocket);
     </script>
     </div> <!-- 關閉 main-wrapper -->
 </body>
