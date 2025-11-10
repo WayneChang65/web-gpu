@@ -10,7 +10,7 @@ services:
     
     # 設定 port 對應，格式為 "主機port:容器port"
     ports:
-      - "8080:80"
+      - "8080:5000"
       
     # --- GPU 存取設定 ---
     # 這是 Docker Compose 中啟用 GPU 支援的標準方式
