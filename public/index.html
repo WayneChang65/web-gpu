@@ -55,8 +55,7 @@
                     <div class="percentage" id="ramPercent">... %</div>
                 </div>
                 <div class="info">
-                    <p><strong>已使用:</strong> <span id="ramUsed">...</span></p>
-                    <p><strong>總共:</strong> <span id="ramTotal">...</span></p>
+                    <p><strong>使用狀況:</strong> <span id="ramUsage">...</span></p>
                 </div>
             </div>
             <div class="timeseries-card">
@@ -190,8 +189,7 @@
             const ramUsageValue = parseFloat(data.ram.usage) || 0;
             updateDoughnutChart(ramChart, ramUsageValue, ramUsageValue.toFixed(1) + ' %');
             updateTimeSeriesChart(ramTimeSeriesChart, { x: data.timestamp, y: ramUsageValue });
-            document.getElementById('ramUsed').innerText = data.ram.used;
-            document.getElementById('ramTotal').innerText = data.ram.total;
+            document.getElementById('ramUsage').innerText = `${data.ram.used} / ${data.ram.total}`;
 
             // 更新 GPU
             if (data.gpu && data.gpu.length > 0) {
