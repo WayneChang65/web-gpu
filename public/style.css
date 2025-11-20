@@ -1,71 +1,134 @@
 /* 基本設定 (深色主題) */
+:root {
+    --bg-color: #1a1b26;
+    --card-bg: #24283b;
+    --text-color: #c0caf5;
+    --title-color: #bb9af7;
+    --subtitle-color: #7aa2f7;
+    --border-color: #3b4261;
+    --accent-green: #9ece6a;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #1a1b26; /* 深藍灰色背景 */
-    color: #c0caf5; /* 柔和的淺藍色文字 */
-    padding: 8px;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding: 1rem;
+    margin: 0;
+    box-sizing: border-box;
 }
 
 h1 {
     text-align: center;
-    color: #bb9af7; /* 紫色標題 */
-    margin-top: 10px;
-    margin-bottom: 15px;
+    color: var(--title-color);
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    /* 減少標題下邊距 */
+    font-size: 2rem;
 }
 
 h2 {
     text-align: center;
-    color: #7aa2f7; /* 藍色子標題 */
+    color: var(--subtitle-color);
     margin-top: 0;
-    margin-bottom: 15px;
-    border-bottom: 1px solid #3b4261;
-    padding-bottom: 10px;
+    margin-bottom: 0.5rem;
+    /* 減少副標題下邊距 */
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+    font-size: 1.5rem;
+}
+
+/* 連線狀態指示燈 */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #f7768e;
+    /* 預設紅色 (斷線) */
+    margin-right: 10px;
+    box-shadow: 0 0 5px rgba(247, 118, 142, 0.5);
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.status-indicator.connected {
+    background-color: #9ece6a;
+    /* 綠色 (連線) */
+    box-shadow: 0 0 5px rgba(158, 206, 106, 0.5);
+}
+
+.status-text {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    vertical-align: middle;
 }
 
 /* 儀表板排版 */
+.main-wrapper {
+    max-width: 98%;
+    /* 改為百分比以適應瀏覽器寬度 */
+    margin: 0 auto;
+    width: 100%;
+    zoom: 0.7;
+    /* 維持縮小比例 */
+}
+
 .stats-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 0.8rem;
+    /* 減少間距 */
 }
 
 .stat-row {
     display: flex;
-    gap: 20px;
-    align-items: stretch; /* 讓同行的卡片等高 */
+    gap: 0.8rem;
+    /* 減少間距 */
+    align-items: stretch;
+    flex-wrap: wrap;
 }
 
-/* 卡片樣式 (左側環圈圖) */
-.card {
-    background-color: #24283b; /* 卡片背景色 */
+/* 卡片樣式 */
+.card,
+.timeseries-card {
+    background-color: var(--card-bg);
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    padding: 20px;
+    padding: 0.8rem;
+    /* 減少內距 */
     box-sizing: border-box;
-    flex: 0 0 300px; /* 固定寬度，不縮放 */
-    display: flex;
-    flex-direction: column;
-    justify-content: center; /* 垂直居中內容 */
-    align-items: center; /* 水平居中內容 */
-    height: 320px; /* 設定固定高度以匹配時序圖卡片 */
 }
 
-/* 圖表容器 (為了讓百分比文字疊在圖表上) */
+.card {
+    flex: 1 1 300px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 260px;
+    /* 減少最小高度 */
+}
+
+.timeseries-card {
+    flex: 2 1 400px;
+    min-height: 260px;
+    /* 減少最小高度 */
+    display: flex;
+    flex-direction: column;
+}
+
+.timeseries-card canvas {
+    flex-grow: 1;
+}
+
+/* 圖表容器 */
 .chart-container {
     position: relative;
     width: 200px;
+    /* 放大圖表 */
     height: 200px;
-    margin-bottom: 15px;
-}
-
-/* 時序圖卡片樣式 (右側) */
-.timeseries-card {
-    background-color: #24283b;
-    border-radius: 10px;
-    padding: 20px;
-    box-sizing: border-box;
-    flex-grow: 1; /* 佔滿剩餘寬度 */
-    height: 320px; /* 給予固定高度 */
+    margin-bottom: 0.5rem;
 }
 
 /* 疊在圖表中間的百分比文字 */
@@ -74,65 +137,57 @@ h2 {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-size: 1.76rem; /* 配合 0.8 縮放 */
+    font-size: 1.5rem;
     font-weight: bold;
-    color: #c0caf5;
+    color: var(--text-color);
 }
 
 /* 靜態資訊文字 */
 .info {
-    width: 100%; /* 讓 info 區域撐滿卡片寬度 */
+    width: 100%;
+    max-width: 250px;
 }
+
 .info p {
-    margin: 8px 0;
+    margin: 0.5rem 0;
     display: flex;
     justify-content: space-between;
-    font-size: 0.95rem;
+    font-size: 1rem;
 }
+
 .info p strong {
-    color: #9ece6a; /* 綠色標籤 */
+    color: var(--accent-green);
 }
+
 .info p span {
-    color: #c0caf5;
+    color: var(--text-color);
     text-align: right;
 }
 
-/* 主要容器，用於縮放整個頁面 */
-.main-wrapper {
-    zoom: 0.8;
-    margin: 0 auto; /* 居中顯示 */
-}
-
 /* 響應式設計 */
-@media (max-width: 1200px) {
-    .stat-row {
-        flex-direction: column; /* 在較小螢幕上垂直堆疊 */
-    }
-
-    .card {
-        flex: 1 1 auto; /* 允許卡片縮放 */
-        height: auto; /* 高度自動調整 */
-    }
-}
-
 @media (max-width: 768px) {
     body {
-        padding: 10px; /* 減少手機上的邊距 */
-    }
-    
-    .main-wrapper {
-        zoom: 1; /* 在手機上恢復正常大小 */
+        padding: 0.5rem;
     }
 
     h1 {
-        font-size: 1.5rem; /* 縮小主標題字體 */
+        font-size: 1.5rem;
     }
 
-    .card, .timeseries-card {
-        padding: 15px;
+    .stat-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .card,
+    .timeseries-card {
+        flex: 1 1 auto;
+        min-height: auto;
+        padding: 1rem;
     }
 
     .timeseries-card {
-        height: 250px; /* 稍微降低時序圖高度 */
+        height: 300px;
+        /* 手機上固定高度 */
     }
 }
