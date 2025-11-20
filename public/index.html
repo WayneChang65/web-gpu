@@ -1,263 +1,104 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系統狀態監控</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div class="main-wrapper">
-        <h1><span id="hostnameDisplay"></span>系統狀態監控儀表板</h1>
+        <h1>
+            <span id="connectionStatus" class="status-indicator" title="已斷線"></span>
+            <span id="hostnameDisplay"></span>系統狀態監控儀表板
+        </h1>
 
         <div class="stats-container">
-        <!-- CPU Row -->
-        <div class="stat-row">
-            <div class="card">
-                <h2>CPU</h2>
-                <div class="chart-container">
-                    <canvas id="cpuChart"></canvas>
-                    <div class="percentage" id="cpuPercent">... %</div>
+            <!-- CPU Row -->
+            <div class="stat-row">
+                <div class="card">
+                    <h2>CPU</h2>
+                    <div class="chart-container">
+                        <canvas id="cpuChart"></canvas>
+                        <div class="percentage" id="cpuPercent">... %</div>
+                    </div>
+                    <div class="info">
+                        <p><strong>核心數:</strong> <span id="cpuCores">...</span></p>
+                    </div>
                 </div>
-                <div class="info">
-                    <p><strong>核心數:</strong> <span id="cpuCores">...</span></p>
+                <div class="timeseries-card">
+                    <canvas id="cpuTimeSeriesChart"></canvas>
                 </div>
             </div>
-            <div class="timeseries-card">
-                <canvas id="cpuTimeSeriesChart"></canvas>
+
+            <!-- GPU Row -->
+            <div class="stat-row">
+                <div class="card">
+                    <h2>GPU</h2>
+                    <div class="chart-container">
+                        <canvas id="gpuChart"></canvas>
+                        <div class="percentage" id="gpuPercent">... %</div>
+                    </div>
+                    <div class="info">
+                        <p><strong>型號:</strong> <span id="gpuModel">...</span></p>
+                        <p><strong>溫度:</strong> <span id="gpuTemp">...</span></p>
+                        <p><strong>功耗:</strong> <span id="gpuPower">...</span></p>
+                    </div>
+                </div>
+                <div class="timeseries-card">
+                    <canvas id="gpuTimeSeriesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- RAM Row -->
+            <div class="stat-row">
+                <div class="card">
+                    <h2>RAM</h2>
+                    <div class="chart-container">
+                        <canvas id="ramChart"></canvas>
+                        <div class="percentage" id="ramPercent">... %</div>
+                    </div>
+                    <div class="info">
+                        <p><strong>使用狀況:</strong> <span id="ramUsage">...</span></p>
+                    </div>
+                </div>
+                <div class="timeseries-card">
+                    <canvas id="ramTimeSeriesChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Network & Disk Row -->
+            <div class="stat-row">
+                <!-- Network Card -->
+                <div class="card">
+                    <h2>Network</h2>
+                    <div class="info">
+                        <p><strong>下載:</strong> <span id="netRx">... KB/s</span></p>
+                        <p><strong>上傳:</strong> <span id="netTx">... KB/s</span></p>
+                    </div>
+                </div>
+                <!-- Disk Card -->
+                <div class="card">
+                    <h2>Disk (/)</h2>
+                    <div class="chart-container">
+                        <canvas id="diskChart"></canvas>
+                        <div class="percentage" id="diskPercent">... %</div>
+                    </div>
+                    <div class="info">
+                        <p><strong>使用狀況:</strong> <span id="diskUsage">...</span></p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- GPU Row -->
-        <div class="stat-row">
-            <div class="card">
-                <h2>GPU</h2>
-                <div class="chart-container">
-                    <canvas id="gpuChart"></canvas>
-                    <div class="percentage" id="gpuPercent">... %</div>
-                </div>
-                <div class="info">
-                    <!-- GPU 型號顯示已移除 -->
-                </div>
-            </div>
-            <div class="timeseries-card">
-                <canvas id="gpuTimeSeriesChart"></canvas>
-            </div>
-        </div>
-
-        <!-- RAM Row -->
-        <div class="stat-row">
-            <div class="card">
-                <h2>RAM</h2>
-                <div class="chart-container">
-                    <canvas id="ramChart"></canvas>
-                    <div class="percentage" id="ramPercent">... %</div>
-                </div>
-                <div class="info">
-                    <p><strong>使用狀況:</strong> <span id="ramUsage">...</span></p>
-                </div>
-            </div>
-            <div class="timeseries-card">
-                <canvas id="ramTimeSeriesChart"></canvas>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-    <script>
-        const MAX_DATA_POINTS = 3600; // 時序圖顯示的最大數據點數量
-
-        // 1. 獲取 Canvas 上下文
-        const cpuCtx = document.getElementById('cpuChart').getContext('2d');
-        const ramCtx = document.getElementById('ramChart').getContext('2d');
-        const gpuCtx = document.getElementById('gpuChart').getContext('2d');
-        const cpuTsCtx = document.getElementById('cpuTimeSeriesChart').getContext('2d');
-        const ramTsCtx = document.getElementById('ramTimeSeriesChart').getContext('2d');
-        const gpuTsCtx = document.getElementById('gpuTimeSeriesChart').getContext('2d');
-
-        // 2. 建立圖表的輔助函數
-        function createUsageChart(ctx) {
-            return new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['已使用', '未使用'],
-                    datasets: [{
-                        data: [0, 100],
-                        backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 255, 255, 0.1)'],
-                        borderColor: 'rgba(44, 48, 59, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
-                }
-            });
-        }
-
-        function createTimeSeriesChart(ctx, label, color) {
-            return new Chart(ctx, {
-                type: 'line',
-                data: {
-                    datasets: [{
-                        label: label,
-                        data: [], // {x: timestamp, y: value}
-                        borderColor: color,
-                        backgroundColor: color.replace('1)', '0.2)'),
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            type: 'time',
-                            display: true,
-                            time: {
-                                unit: 'minute',
-                                stepSize: 10,
-                                tooltipFormat: 'HH:mm:ss',
-                                displayFormats: {
-                                    minute: 'HH:mm'
-                                }
-                            },
-                            ticks: { color: '#c0caf5', maxRotation: 0, minRotation: 0 }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            ticks: { color: '#c0caf5' }
-                        }
-                    },
-                    plugins: {
-                        legend: { display: true, position: 'top', labels: { color: '#c0caf5', font: { size: 14 } } }
-                    }
-                }
-            });
-        }
-
-        // 3. 初始化所有圖表
-        const cpuChart = createUsageChart(cpuCtx);
-        const ramChart = createUsageChart(ramCtx);
-        const gpuChart = createUsageChart(gpuCtx);
-        const cpuTimeSeriesChart = createTimeSeriesChart(cpuTsCtx, 'CPU 使用率 (%)', 'rgba(156, 204, 101, 1)');
-        const ramTimeSeriesChart = createTimeSeriesChart(ramTsCtx, 'RAM 使用率 (%)', 'rgba(77, 182, 172, 1)');
-        const gpuTimeSeriesChart = createTimeSeriesChart(gpuTsCtx, 'GPU 使用率 (%)', 'rgba(126, 87, 194, 1)');
-
-        // 4. 更新圖表的函數
-        function updateDoughnutChart(chart, percentValue, percentText) {
-            chart.data.datasets[0].data[0] = percentValue;
-            chart.data.datasets[0].data[1] = 100 - percentValue;
-            chart.update('none');
-            const percentElementId = chart.canvas.id.replace('Chart', 'Percent');
-            document.getElementById(percentElementId).innerText = percentText;
-        }
-
-        function updateTimeSeriesChart(chart, point) {
-            chart.data.datasets[0].data.push(point);
-            if (chart.data.datasets[0].data.length > MAX_DATA_POINTS) {
-                chart.data.datasets[0].data.shift();
-            }
-            chart.update('none');
-        }
-        
-        function processData(data) {
-            // 更新主機名稱
-            let displayName = data.hostname;
-            if (data.gpu && data.gpu.length > 0 && data.gpu[0].model) {
-                displayName = data.gpu[0].model;
-            }
-            if (displayName) {
-                document.getElementById('hostnameDisplay').innerText = displayName + ' - ';
-            }
-
-            // 更新 CPU
-            const cpuLoadValue = parseFloat(data.cpu.load) || 0;
-            updateDoughnutChart(cpuChart, cpuLoadValue, cpuLoadValue.toFixed(1) + ' %');
-            updateTimeSeriesChart(cpuTimeSeriesChart, { x: data.timestamp, y: cpuLoadValue });
-            document.getElementById('cpuCores').innerText = data.cpu.cores;
-
-            // 更新 RAM
-            const ramUsageValue = parseFloat(data.ram.usage) || 0;
-            updateDoughnutChart(ramChart, ramUsageValue, ramUsageValue.toFixed(1) + ' %');
-            updateTimeSeriesChart(ramTimeSeriesChart, { x: data.timestamp, y: ramUsageValue });
-            document.getElementById('ramUsage').innerText = `${data.ram.used} / ${data.ram.total}`;
-
-            // 更新 GPU
-            if (data.gpu && data.gpu.length > 0) {
-                const gpuData = data.gpu[0];
-                const gpuUtilValue = parseFloat(gpuData.utilization) || 0;
-                updateDoughnutChart(gpuChart, gpuUtilValue, gpuUtilValue.toFixed(1) + ' %');
-                updateTimeSeriesChart(gpuTimeSeriesChart, { x: data.timestamp, y: gpuUtilValue });
-            }
-        }
-
-        // 5. WebSocket 連線
-        function connectWebSocket() {
-            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${wsProtocol}//${window.location.host}`;
-            const ws = new WebSocket(wsUrl);
-
-            ws.onopen = () => {
-                console.log('WebSocket 已連線');
-            };
-
-            ws.onmessage = event => {
-                const message = JSON.parse(event.data);
-                if (message.type === 'history') {
-                    // 清空現有數據
-                    cpuTimeSeriesChart.data.datasets[0].data = [];
-                    ramTimeSeriesChart.data.datasets[0].data = [];
-                    gpuTimeSeriesChart.data.datasets[0].data = [];
-                    
-                    // 載入歷史數據
-                    message.data.forEach(dataPoint => {
-                        cpuTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.cpu.load) });
-                        ramTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.ram.usage) });
-                        if (dataPoint.gpu && dataPoint.gpu.length > 0) {
-                           gpuTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.gpu[0].utilization) });
-                        }
-                    });
-                    
-                    // 更新最後一筆數據到環圈圖和資訊欄
-                    if (message.data.length > 0) {
-                        processData(message.data[message.data.length - 1]);
-                    }
-                    
-                    // 一次性更新所有時序圖
-                    cpuTimeSeriesChart.update('none');
-                    ramTimeSeriesChart.update('none');
-                    gpuTimeSeriesChart.update('none');
-
-                } else if (message.type === 'update') {
-                    processData(message);
-                } else if (message.type === 'error') {
-                    console.error('伺服器錯誤:', message.message);
-                }
-            };
-
-            ws.onclose = () => {
-                console.log('WebSocket 已離線，嘗試重新連線...');
-                setTimeout(connectWebSocket, 3000); // 3秒後重連
-            };
-
-            ws.onerror = error => {
-                console.error('WebSocket 錯誤:', error);
-                ws.close();
-            };
-        }
-
-        // 6. 啟動
-        document.addEventListener('DOMContentLoaded', connectWebSocket);
-    </script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+        <script src="app.js"></script>
     </div> <!-- 關閉 main-wrapper -->
 </body>
+
 </html>
