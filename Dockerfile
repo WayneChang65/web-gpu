@@ -4,31 +4,33 @@ FROM nvidia/cuda:12.1.1-base-ubuntu22.04
 # 設定環境變數，避免 apt-get 在安裝過程中出現互動式提問
 ENV DEBIAN_FRONTEND=noninteractive
 
-# --- 安裝 Node.js 20 ---
-RUN apt-get update && apt-get install -y ca-certificates curl gnupg && \
-    mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
-    apt-get update && apt-get install -y nodejs && \
-    apt-get clean
+# Build stage
+FROM node:20-slim AS builder
 
-# 將工作目錄設定為 /app
 WORKDIR /app
 
-# 複製依賴性定義檔
+# 安裝建置依賴 (如果有的話)
+# RUN apt-get update && apt-get install -y python3 make g++
+
 COPY package*.json ./
+RUN npm ci
 
-# 安裝生產環境的依賴
-RUN npm install --production
+# Production stage
+FROM node:20-slim
 
-# 複製所有應用程式碼
+WORKDIR /app
+
+# 安裝生產環境需要的系統套件
+# procps 提供 ps, top 等指令
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /app/node_modules ./node_modules
+COPY package*.json ./
 COPY . .
 
-# 賦予啟動腳本執行權限
+# 確保腳本可執行
 RUN chmod +x start.sh
 
-# 對外開放 port 5000
 EXPOSE 5000
 
-# 執行啟動腳本
 CMD ["./start.sh"]
