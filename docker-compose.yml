@@ -4,7 +4,7 @@ services:
     build: .
     
     # 設定容器的名稱
-    container_name: my-web-gpu-app
+    container_name: web-gpu
     
     restart: always
     # 設定 port 對應，格式為 "主機port:容器port"
