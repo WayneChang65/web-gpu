@@ -5,6 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>系統狀態監控</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -17,79 +21,66 @@
         </h1>
 
         <div class="stats-container">
-            <!-- CPU Row -->
-            <div class="stat-row">
-                <div class="card">
-                    <h2>CPU</h2>
-                    <div class="chart-container">
-                        <canvas id="cpuChart"></canvas>
-                        <div class="percentage" id="cpuPercent">... %</div>
-                    </div>
-                    <div class="info">
-                        <p><strong>核心數:</strong> <span id="cpuCores">...</span></p>
-                    </div>
-                </div>
-                <div class="timeseries-card">
+            <div class="main-timeseries-stack">
+                <div class="timeseries-card cpu-timeseries">
                     <canvas id="cpuTimeSeriesChart"></canvas>
                 </div>
-            </div>
-
-            <!-- GPU Row -->
-            <div class="stat-row">
-                <div class="card">
-                    <h2>GPU</h2>
-                    <div class="chart-container">
-                        <canvas id="gpuChart"></canvas>
-                        <div class="percentage" id="gpuPercent">... %</div>
-                    </div>
-                    <div class="info">
-                        <p><strong>型號:</strong> <span id="gpuModel">...</span></p>
-                        <p><strong>溫度:</strong> <span id="gpuTemp">...</span></p>
-                        <p><strong>功耗:</strong> <span id="gpuPower">...</span></p>
-                    </div>
-                </div>
-                <div class="timeseries-card">
+                <div class="timeseries-card gpu-timeseries">
                     <canvas id="gpuTimeSeriesChart"></canvas>
                 </div>
-            </div>
-
-            <!-- RAM Row -->
-            <div class="stat-row">
-                <div class="card">
-                    <h2>RAM</h2>
-                    <div class="chart-container">
-                        <canvas id="ramChart"></canvas>
-                        <div class="percentage" id="ramPercent">... %</div>
-                    </div>
-                    <div class="info">
-                        <p><strong>使用狀況:</strong> <span id="ramUsage">...</span></p>
-                    </div>
-                </div>
-                <div class="timeseries-card">
+                <div class="timeseries-card ram-timeseries">
                     <canvas id="ramTimeSeriesChart"></canvas>
                 </div>
             </div>
 
-            <!-- Network & Disk Row -->
-            <div class="stat-row">
-                <!-- Network Card -->
-                <div class="card">
-                    <h2>Network</h2>
-                    <div class="info">
-                        <p><strong>下載:</strong> <span id="netRx">... KB/s</span></p>
-                        <p><strong>上傳:</strong> <span id="netTx">... KB/s</span></p>
-                    </div>
+            <!-- CPU Card -->
+            <div class="card cpu-card">
+                <h2><i class="fa-solid fa-microchip"></i> CPU</h2>
+                <div class="chart-container">
+                    <canvas id="cpuChart"></canvas>
+                    <div class="percentage" id="cpuPercent">... %</div>
                 </div>
-                <!-- Disk Card -->
-                <div class="card">
-                    <h2>Disk (/)</h2>
-                    <div class="chart-container">
-                        <canvas id="diskChart"></canvas>
-                        <div class="percentage" id="diskPercent">... %</div>
-                    </div>
-                    <div class="info">
-                        <p><strong>使用狀況:</strong> <span id="diskUsage">...</span></p>
-                    </div>
+                <div class="info">
+                    <p><strong>核心數:</strong> <span id="cpuCores">...</span></p>
+                </div>
+            </div>
+
+            <!-- GPU Card -->
+            <div class="card gpu-card">
+                <h2><i class="fa-solid fa-gamepad"></i> GPU</h2>
+                <div class="chart-container">
+                    <canvas id="gpuChart"></canvas>
+                    <div class="percentage" id="gpuPercent">... %</div>
+                </div>
+                <div class="info">
+                    <p><strong>型號:</strong> <span id="gpuModel">...</span></p>
+                    <p><strong>溫度:</strong> <span id="gpuTemp">...</span></p>
+                    <p><strong>功耗:</strong> <span id="gpuPower">...</span></p>
+                </div>
+            </div>
+
+            <!-- RAM Card -->
+            <div class="card ram-card">
+                <h2><i class="fa-solid fa-memory"></i> RAM</h2>
+                <div class="chart-container">
+                    <canvas id="ramChart"></canvas>
+                    <div class="percentage" id="ramPercent">... %</div>
+                </div>
+                <div class="info">
+                    <p><strong>使用狀況:</strong> <span id="ramUsage">...</span></p>
+                </div>
+            </div>
+
+
+            <!-- Disk Card -->
+            <div class="card disk-card">
+                <h2><i class="fa-solid fa-database"></i> Disk (/)</h2>
+                <div class="chart-container">
+                    <canvas id="diskChart"></canvas>
+                    <div class="percentage" id="diskPercent">... %</div>
+                </div>
+                <div class="info">
+                    <p><strong>使用狀況:</strong> <span id="diskUsage">...</span></p>
                 </div>
             </div>
         </div>

@@ -1,8 +1,19 @@
-const MAX_DATA_POINTS = 3600; // 時序圖顯示的最大數據點數量
-let reconnectAttempts = 0;
-const MAX_RECONNECT_DELAY = 30000; // 最大重連延遲 30 秒
+// --- THEME CONFIGURATION ---
+const HUD_THEME = {
+    cyan: 'rgba(0, 255, 255, 1)',
+    cyan_light: 'rgba(0, 255, 255, 0.8)',
+    cyan_fill: 'rgba(0, 255, 255, 0.15)',
+    grid: 'rgba(0, 255, 255, 0.1)',
+    font: '#c0caf5',
+    transparent: 'rgba(0, 0, 0, 0)',
+    doughnut_bg: 'rgba(255, 255, 255, 0.05)',
+};
 
-// 1. 獲取 Canvas 上下文
+const MAX_DATA_POINTS = 3600;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_DELAY = 30000;
+
+// 1. Get Canvas Contexts
 const cpuCtx = document.getElementById('cpuChart').getContext('2d');
 const ramCtx = document.getElementById('ramChart').getContext('2d');
 const gpuCtx = document.getElementById('gpuChart').getContext('2d');
@@ -11,17 +22,18 @@ const cpuTsCtx = document.getElementById('cpuTimeSeriesChart').getContext('2d');
 const ramTsCtx = document.getElementById('ramTimeSeriesChart').getContext('2d');
 const gpuTsCtx = document.getElementById('gpuTimeSeriesChart').getContext('2d');
 
-// 2. 建立圖表的輔助函數
+
+// 2. Chart Factory Functions (with HUD Theming)
 function createUsageChart(ctx) {
     return new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['已使用', '未使用'],
+            labels: ['Used', 'Free'],
             datasets: [{
                 data: [0, 100],
-                backgroundColor: ['rgba(75, 192, 192, 0.7)', 'rgba(255, 255, 255, 0.1)'],
-                borderColor: 'rgba(44, 48, 59, 1)',
-                borderWidth: 2
+                backgroundColor: [HUD_THEME.cyan_light, HUD_THEME.doughnut_bg],
+                borderColor: HUD_THEME.transparent,
+                borderWidth: 0
             }]
         },
         options: {
@@ -33,15 +45,15 @@ function createUsageChart(ctx) {
     });
 }
 
-function createTimeSeriesChart(ctx, label, color) {
+function createTimeSeriesChart(ctx, label) {
     return new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [{
                 label: label,
                 data: [], // {x: timestamp, y: value}
-                borderColor: color,
-                backgroundColor: color.replace('1)', '0.2)'),
+                borderColor: HUD_THEME.cyan,
+                backgroundColor: HUD_THEME.cyan_fill,
                 borderWidth: 2,
                 pointRadius: 0,
                 tension: 0.4,
@@ -59,35 +71,48 @@ function createTimeSeriesChart(ctx, label, color) {
                         unit: 'minute',
                         stepSize: 10,
                         tooltipFormat: 'HH:mm:ss',
-                        displayFormats: {
-                            minute: 'HH:mm'
-                        }
+                        displayFormats: { minute: 'HH:mm' }
                     },
-                    ticks: { color: '#c0caf5', maxRotation: 0, minRotation: 0 }
+                    ticks: { color: HUD_THEME.font, maxRotation: 0, minRotation: 0 },
+                    grid: { color: HUD_THEME.grid }
                 },
                 y: {
                     beginAtZero: true,
                     max: 100,
-                    ticks: { color: '#c0caf5' }
+                    ticks: { color: HUD_THEME.font },
+                    grid: { color: HUD_THEME.grid }
                 }
             },
             plugins: {
-                legend: { display: true, position: 'top', labels: { color: '#c0caf5', font: { size: 14 } } }
+                legend: { 
+                    display: true, 
+                    position: 'top', 
+                    align: 'end',
+                    labels: { color: HUD_THEME.font, font: { size: 14, family: "'Inter', sans-serif" } } 
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 20, 30, 0.8)',
+                    titleColor: HUD_THEME.cyan,
+                    bodyColor: HUD_THEME.font,
+                    borderColor: HUD_THEME.grid,
+                    borderWidth: 1,
+                }
             }
         }
     });
 }
 
-// 3. 初始化所有圖表
+// 3. Initialize All Charts
 const cpuChart = createUsageChart(cpuCtx);
 const ramChart = createUsageChart(ramCtx);
 const gpuChart = createUsageChart(gpuCtx);
 const diskChart = createUsageChart(diskCtx);
-const cpuTimeSeriesChart = createTimeSeriesChart(cpuTsCtx, 'CPU 使用率 (%)', 'rgba(156, 204, 101, 1)');
-const ramTimeSeriesChart = createTimeSeriesChart(ramTsCtx, 'RAM 使用率 (%)', 'rgba(77, 182, 172, 1)');
-const gpuTimeSeriesChart = createTimeSeriesChart(gpuTsCtx, 'GPU 使用率 (%)', 'rgba(126, 87, 194, 1)');
+const cpuTimeSeriesChart = createTimeSeriesChart(cpuTsCtx, 'CPU Usage (%)');
+const ramTimeSeriesChart = createTimeSeriesChart(ramTsCtx, 'RAM Usage (%)');
+const gpuTimeSeriesChart = createTimeSeriesChart(gpuTsCtx, 'GPU Usage (%)');
 
-// 4. 更新圖表的函數
+
+// 4. Chart Update Functions
 function updateDoughnutChart(chart, percentValue, percentText) {
     chart.data.datasets[0].data[0] = percentValue;
     chart.data.datasets[0].data[1] = 100 - percentValue;
@@ -105,7 +130,6 @@ function updateTimeSeriesChart(chart, point) {
 }
 
 function processData(data) {
-    // 更新主機名稱
     let displayName = data.hostname;
     if (data.gpu && data.gpu.length > 0 && data.gpu[0].model) {
         displayName = data.gpu[0].model;
@@ -114,19 +138,16 @@ function processData(data) {
         document.getElementById('hostnameDisplay').innerText = displayName + ' - ';
     }
 
-    // 更新 CPU
     const cpuLoadValue = parseFloat(data.cpu.load) || 0;
     updateDoughnutChart(cpuChart, cpuLoadValue, cpuLoadValue.toFixed(1) + ' %');
     updateTimeSeriesChart(cpuTimeSeriesChart, { x: data.timestamp, y: cpuLoadValue });
     document.getElementById('cpuCores').innerText = data.cpu.cores;
 
-    // 更新 RAM
     const ramUsageValue = parseFloat(data.ram.usage) || 0;
     updateDoughnutChart(ramChart, ramUsageValue, ramUsageValue.toFixed(1) + ' %');
     updateTimeSeriesChart(ramTimeSeriesChart, { x: data.timestamp, y: ramUsageValue });
     document.getElementById('ramUsage').innerText = `${data.ram.used} / ${data.ram.total}`;
 
-    // 更新 GPU
     if (data.gpu && data.gpu.length > 0) {
         const gpuData = data.gpu[0];
         const gpuUtilValue = parseFloat(gpuData.utilization) || 0;
@@ -138,13 +159,8 @@ function processData(data) {
         document.getElementById('gpuPower').innerText = gpuData.powerDraw || 'N/A';
     }
 
-    // 更新 Network
-    if (data.network) {
-        document.getElementById('netRx').innerText = `${data.network.rx_sec} KB/s`;
-        document.getElementById('netTx').innerText = `${data.network.tx_sec} KB/s`;
-    }
 
-    // 更新 Disk
+
     if (data.disk) {
         const diskUsageValue = parseFloat(data.disk.usage) || 0;
         updateDoughnutChart(diskChart, diskUsageValue, diskUsageValue.toFixed(1) + ' %');
@@ -156,34 +172,32 @@ function updateConnectionStatus(connected) {
     const indicator = document.getElementById('connectionStatus');
     if (connected) {
         indicator.classList.add('connected');
-        indicator.title = "已連線";
+        indicator.title = "Connected";
     } else {
         indicator.classList.remove('connected');
-        indicator.title = "已斷線";
+        indicator.title = "Disconnected";
     }
 }
 
-// 5. WebSocket 連線
+// 5. WebSocket Connection
 function connectWebSocket() {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${wsProtocol}//${window.location.host}`;
     const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-        console.log('WebSocket 已連線');
+        console.log('WebSocket Connected');
         updateConnectionStatus(true);
-        reconnectAttempts = 0; // 重置重連次數
+        reconnectAttempts = 0;
     };
 
     ws.onmessage = event => {
         const message = JSON.parse(event.data);
         if (message.type === 'history') {
-            // 清空現有數據
             cpuTimeSeriesChart.data.datasets[0].data = [];
             ramTimeSeriesChart.data.datasets[0].data = [];
             gpuTimeSeriesChart.data.datasets[0].data = [];
 
-            // 載入歷史數據
             message.data.forEach(dataPoint => {
                 cpuTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.cpu.load) });
                 ramTimeSeriesChart.data.datasets[0].data.push({ x: dataPoint.timestamp, y: parseFloat(dataPoint.ram.usage) });
@@ -192,12 +206,10 @@ function connectWebSocket() {
                 }
             });
 
-            // 更新最後一筆數據到環圈圖和資訊欄
             if (message.data.length > 0) {
                 processData(message.data[message.data.length - 1]);
             }
 
-            // 一次性更新所有時序圖
             cpuTimeSeriesChart.update('none');
             ramTimeSeriesChart.update('none');
             gpuTimeSeriesChart.update('none');
@@ -205,17 +217,15 @@ function connectWebSocket() {
         } else if (message.type === 'update') {
             processData(message);
         } else if (message.type === 'error') {
-            console.error('伺服器錯誤:', message.message);
+            console.error('Server Error:', message.message);
         }
     };
 
     ws.onclose = () => {
-        console.log('WebSocket 已離線');
+        console.log('WebSocket Disconnected');
         updateConnectionStatus(false);
-
-        // 指數退避重連
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
-        console.log(`${delay / 1000} 秒後嘗試重新連線...`);
+        console.log(`Attempting to reconnect in ${delay / 1000}s...`);
 
         setTimeout(() => {
             reconnectAttempts++;
@@ -224,10 +234,10 @@ function connectWebSocket() {
     };
 
     ws.onerror = error => {
-        console.error('WebSocket 錯誤:', error);
+        console.error('WebSocket Error:', error);
         ws.close();
     };
 }
 
-// 6. 啟動
+// 6. Liftoff
 document.addEventListener('DOMContentLoaded', connectWebSocket);
